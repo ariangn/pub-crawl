@@ -9,7 +9,7 @@ import java.util.UUID;
 public class UserJpaEntity {
 
     @Id
-    @GeneratedValue
+    @Column(nullable = false)
     private UUID id;
 
     @Column(nullable = false, unique = true, length = 30)
