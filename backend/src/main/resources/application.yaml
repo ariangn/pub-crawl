@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: pubcrawl
+  jwt:
+    secret: ${JWT_SECRET}
+    accessTokenExpiration: 900 # 15m
+    refreshTokenExpiration: 604800 # 7d
+  profiles:
+    active: dev

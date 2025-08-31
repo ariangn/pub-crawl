@@ -1,0 +1,2 @@
+-- Change user ID from BIGINT to BINARY(16) for UUID
+ALTER TABLE users MODIFY COLUMN id BINARY(16);
