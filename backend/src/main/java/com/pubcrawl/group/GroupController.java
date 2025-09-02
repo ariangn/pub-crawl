@@ -77,6 +77,20 @@ public class GroupController {
         return groupService.updateMember(groupId, userId, request);
     }
 
+    @DeleteMapping("/{groupId}/members/{userId}")
+    public ResponseEntity<Void> removeMember(
+            @PathVariable UUID groupId,
+            @PathVariable UUID userId) {
+        
+        var currentUser = authService.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        groupService.removeMember(groupId, userId, currentUser);
+        return ResponseEntity.noContent().build();
+    }
+
     @ExceptionHandler(GroupNotFoundException.class)
     public ResponseEntity<Void> handleGroupNotFound() {
         return ResponseEntity.notFound().build();
@@ -94,7 +108,28 @@ public class GroupController {
         );
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
+    @ExceptionHandler(UserNotGroupMemberException.class)
+    public ResponseEntity<Map<String, String>> handleUserNotGroupMember() {
+        return ResponseEntity.badRequest().body(
+            Map.of("error", "User is not a member of this group.")
+        );
+    }
+
+    @ExceptionHandler(UnauthorizedMemberOperationException.class)
+    public ResponseEntity<Map<String, String>> handleUnauthorizedMemberOperation() {
+        return ResponseEntity.badRequest().body(
+            Map.of("error", "Only group admins can remove members.")
+        );
+    }
+
+    @ExceptionHandler(AdminSelfRemovalException.class)
+    public ResponseEntity<Map<String, String>> handleAdminSelfRemoval() {
+        return ResponseEntity.badRequest().body(
+            Map.of("error", "Admin cannot remove themselves from the group.")
+        );
+    }
+
+    @ExceptionHandler(InvalidInviteCodeException.class)
     public ResponseEntity<Map<String, String>> handleInvalidInviteCode() {
         return ResponseEntity.badRequest().body(
             Map.of("error", "Invalid invite code.")

@@ -64,7 +64,7 @@ public class GroupService {
         
         // Verify invite code
         if (!group.getInviteCode().equals(request.getInviteCode())) {
-            throw new IllegalArgumentException("Invalid invite code");
+            throw new InvalidInviteCodeException();
         }
         
         // Check if user is already a member
@@ -92,6 +92,26 @@ public class GroupService {
         groupMemberRepository.save(member);
         
         return groupMapper.toDto(member);
+    }
+
+    public void removeMember(UUID groupId, UUID userId, User currentUser) {
+        // Check if current user is admin of the group
+        var currentUserMember = groupMemberRepository.findByGroupIdAndUserId(groupId, currentUser.getId())
+                .orElseThrow(UserNotGroupMemberException::new);
+        
+        if (currentUserMember.getRole() != MemberRole.ADMIN) {
+            throw new UnauthorizedMemberOperationException();
+        }
+        
+        // Prevent admin from removing themselves
+        if (currentUser.getId().equals(userId)) {
+            throw new AdminSelfRemovalException();
+        }
+        
+        var member = groupMemberRepository.findByGroupIdAndUserId(groupId, userId)
+                .orElseThrow(GroupMemberNotFoundException::new);
+        
+        groupMemberRepository.delete(member);
     }
 
     private String generateInviteCode() {
