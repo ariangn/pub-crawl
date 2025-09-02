@@ -64,7 +64,7 @@
         <dependency>
             <artifactId>lombok</artifactId>
             <groupId>org.projectlombok</groupId>
-            <scope>annotationProcessor</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>

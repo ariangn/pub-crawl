@@ -1,0 +1,108 @@
+package com.pubcrawl.group;
+
+import com.pubcrawl.auth.AuthService;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@RestController
+@AllArgsConstructor
+@RequestMapping("/groups")
+public class GroupController {
+    private final GroupService groupService;
+    private final AuthService authService;
+
+    @GetMapping
+    public Iterable<GroupDto> getAllGroups(
+        @RequestParam(required = false, defaultValue = "", name = "sort") String sortBy
+    ) {
+        return groupService.getAllGroups(sortBy);
+    }
+
+    @PostMapping
+    public ResponseEntity<?> createGroup(
+            @Valid @RequestBody CreateGroupRequest request,
+            UriComponentsBuilder uriBuilder) {
+        
+        var currentUser = authService.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        var groupDto = groupService.createGroup(request, currentUser);
+        var uri = uriBuilder.path("/groups/{id}").buildAndExpand(groupDto.getId()).toUri();
+        return ResponseEntity.created(uri).body(groupDto);
+    }
+
+    @GetMapping("/{groupId}")
+    public GroupDto getGroup(@PathVariable UUID groupId) {
+        return groupService.getGroup(groupId);
+    }
+
+    @GetMapping("/{groupId}/members")
+    public List<GroupMemberDto> getGroupMembers(@PathVariable UUID groupId) {
+        return groupService.getGroupMembers(groupId);
+    }
+
+    @PostMapping("/{groupId}/members")
+    public ResponseEntity<?> joinGroup(
+            @PathVariable UUID groupId,
+            @Valid @RequestBody JoinGroupRequest request,
+            UriComponentsBuilder uriBuilder) {
+        
+        var currentUser = authService.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        var memberDto = groupService.joinGroup(groupId, request, currentUser);
+        var uri = uriBuilder.path("/groups/{groupId}/members/{userId}")
+                .buildAndExpand(groupId, memberDto.getUserId()).toUri();
+        return ResponseEntity.created(uri).body(memberDto);
+    }
+
+    @PatchMapping("/{groupId}/members/{userId}")
+    public GroupMemberDto updateMember(
+            @PathVariable UUID groupId,
+            @PathVariable UUID userId,
+            @RequestBody UpdateMemberRequest request) {
+        return groupService.updateMember(groupId, userId, request);
+    }
+
+    @ExceptionHandler(GroupNotFoundException.class)
+    public ResponseEntity<Void> handleGroupNotFound() {
+        return ResponseEntity.notFound().build();
+    }
+
+    @ExceptionHandler(GroupMemberNotFoundException.class)
+    public ResponseEntity<Void> handleGroupMemberNotFound() {
+        return ResponseEntity.notFound().build();
+    }
+
+    @ExceptionHandler(DuplicateGroupMemberException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateGroupMember() {
+        return ResponseEntity.badRequest().body(
+            Map.of("error", "User is already a member of this group.")
+        );
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidInviteCode() {
+        return ResponseEntity.badRequest().body(
+            Map.of("error", "Invalid invite code.")
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Void> handleAccessDenied() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+}
