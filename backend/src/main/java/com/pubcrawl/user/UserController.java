@@ -1,12 +1,13 @@
 package com.pubcrawl.user;
 
+import com.pubcrawl.auth.JwtResponse;
+import com.pubcrawl.auth.JwtService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Map;
 import java.util.UUID;
@@ -16,6 +17,8 @@ import java.util.UUID;
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
 
     @GetMapping
     public Iterable<UserDto> getAllUsers(
@@ -30,13 +33,16 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<?> registerUser(
-            @Valid @RequestBody RegisterUserRequest request,
-            UriComponentsBuilder uriBuilder) {
+    public ResponseEntity<JwtResponse> registerUser(
+            @Valid @RequestBody RegisterUserRequest request) {
 
         var userDto = userService.registerUser(request);
-        var uri = uriBuilder.path("/users/{id}").buildAndExpand(userDto.getId()).toUri();
-        return ResponseEntity.created(uri).body(userDto);
+        
+        // generate JWT token upon registration
+        var user = userRepository.findById(userDto.getId()).orElseThrow();
+        var accessToken = jwtService.generateAccessToken(user);
+        
+        return ResponseEntity.ok(new JwtResponse(accessToken.toString()));
     }
 
     @PutMapping("/{id}")
@@ -51,10 +57,17 @@ public class UserController {
         userService.deleteUser(id);
     }
 
-    @ExceptionHandler(DuplicateUserException.class)
-    public ResponseEntity<Map<String, String>> handleDuplicateUser() {
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateEmail() {
         return ResponseEntity.badRequest().body(
-            Map.of("email", "Email is already registered.")
+            Map.of("error", "Email is already registered.")
+        );
+    }
+
+    @ExceptionHandler(DuplicateUsernameException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateUsername() {
+        return ResponseEntity.badRequest().body(
+            Map.of("error", "Username is already taken.")
         );
     }
 

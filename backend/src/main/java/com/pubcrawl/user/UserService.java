@@ -32,7 +32,11 @@ public class UserService {
 
     public UserDto registerUser(RegisterUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateUserException();
+            throw new DuplicateEmailException();
+        }
+        
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new DuplicateUsernameException();
         }
 
         var user = userMapper.toEntity(request);

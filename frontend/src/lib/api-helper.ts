@@ -13,6 +13,38 @@ export const removeToken = (): void => {
   localStorage.removeItem('accessToken');
 };
 
+// API call for authentication endpoints (login, signup) - no Authorization header
+export const authApiCall = async (endpoint: string, options: RequestInit = {}): Promise<Response> => {
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage = 'An error occurred';
+    
+    try {
+      const errorData = JSON.parse(errorText);
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch {
+      errorMessage = errorText || `HTTP ${response.status}`;
+    }
+    
+    throw new Error(errorMessage);
+  }
+
+  return response;
+};
+
 export const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<Response> => {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -32,8 +64,12 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}): Prom
     headers,
   });
 
+  // Skip token refresh for authentication endpoints
+  const isAuthEndpoint = endpoint.startsWith('/auth/login') || 
+                        endpoint.startsWith('/auth/refresh') || 
+                        endpoint.startsWith('/users/signup');
 
-  if (response.status === 401) {
+  if (response.status === 401 && !isAuthEndpoint) {
     try {
       // attempt to refresh token
       const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {

@@ -27,6 +27,17 @@ public class GroupController {
         return groupService.getAllGroups(sortBy);
     }
 
+    @GetMapping("/my-groups")
+    public Iterable<GroupDto> getMyGroups(
+        @RequestParam(required = false, defaultValue = "", name = "sort") String sortBy
+    ) {
+        var currentUser = authService.getCurrentUser();
+        if (currentUser == null) {
+            return List.of();
+        }
+        return groupService.getUserGroups(currentUser.getId(), sortBy);
+    }
+
     @PostMapping
     public ResponseEntity<?> createGroup(
             @Valid @RequestBody CreateGroupRequest request,
@@ -45,6 +56,11 @@ public class GroupController {
     @GetMapping("/{groupId}")
     public GroupDto getGroup(@PathVariable UUID groupId) {
         return groupService.getGroup(groupId);
+    }
+
+    @GetMapping("/by-invite/{inviteCode}")
+    public GroupDto getGroupByInviteCode(@PathVariable String inviteCode) {
+        return groupService.getGroupByInviteCode(inviteCode);
     }
 
     @GetMapping("/{groupId}/members")
@@ -91,6 +107,17 @@ public class GroupController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{groupId}/members/me")
+    public ResponseEntity<Void> leaveGroup(@PathVariable UUID groupId) {
+        var currentUser = authService.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        groupService.removeMember(groupId, currentUser.getId(), currentUser);
+        return ResponseEntity.noContent().build();
+    }
+
     @ExceptionHandler(GroupNotFoundException.class)
     public ResponseEntity<Void> handleGroupNotFound() {
         return ResponseEntity.notFound().build();
@@ -133,6 +160,13 @@ public class GroupController {
     public ResponseEntity<Map<String, String>> handleInvalidInviteCode() {
         return ResponseEntity.badRequest().body(
             Map.of("error", "Invalid invite code.")
+        );
+    }
+
+    @ExceptionHandler(DuplicateGroupNameException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateGroupName() {
+        return ResponseEntity.badRequest().body(
+            Map.of("error", "Group name is already taken.")
         );
     }
 

@@ -1,5 +1,5 @@
 import type { LoginRequest, SignupRequest, AuthResponse } from '../entity/user';
-import { apiCall, getToken, setToken, removeToken } from '@/lib/api-helper';
+import { apiCall, authApiCall, getToken, setToken, removeToken } from '@/lib/api-helper';
 
 export { getToken, setToken, removeToken };
 
@@ -7,8 +7,17 @@ export const isAuthenticated = (): boolean => {
   return getToken() !== null;
 };
 
+export const clearAuthState = (): void => {
+  removeToken();
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('user');
+};
+
 export const login = async (credentials: LoginRequest): Promise<AuthResponse> => {
-  const response = await apiCall('/auth/login', {
+  // clear any existing tokens before login
+  clearAuthState();
+  
+  const response = await authApiCall('/auth/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
   });
@@ -17,7 +26,7 @@ export const login = async (credentials: LoginRequest): Promise<AuthResponse> =>
 };
 
 export const signup = async (userData: SignupRequest): Promise<AuthResponse> => {
-  const response = await apiCall('/users/signup', {
+  const response = await authApiCall('/users', {
     method: 'POST',
     body: JSON.stringify(userData),
   });
@@ -31,6 +40,7 @@ export const getCurrentUser = async () => {
 };
 
 export const logout = () => {
-  removeToken();
+  clearAuthState();
+  // redirect to login page
   window.location.href = '/login';
 };

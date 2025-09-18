@@ -27,12 +27,37 @@ public class GroupService {
                 .toList();
     }
 
+    public Iterable<GroupDto> getUserGroups(UUID userId, String sortBy) {
+        final String finalSortBy = Set.of("name", "createdAt").contains(sortBy) ? sortBy : "name";
+
+        var members = groupMemberRepository.findByUserId(userId);
+        return members.stream()
+                .map(member -> groupMapper.toDto(member.getGroup()))
+                .sorted((g1, g2) -> {
+                    if (finalSortBy.equals("createdAt")) {
+                        return g2.getCreatedAt().compareTo(g1.getCreatedAt());
+                    }
+                    return g1.getName().compareTo(g2.getName());
+                })
+                .toList();
+    }
+
     public GroupDto getGroup(UUID groupId) {
         var group = groupRepository.findById(groupId).orElseThrow(GroupNotFoundException::new);
         return groupMapper.toDto(group);
     }
 
+    public GroupDto getGroupByInviteCode(String inviteCode) {
+        var group = groupRepository.findByInviteCode(inviteCode).orElseThrow(InvalidInviteCodeException::new);
+        return groupMapper.toDto(group);
+    }
+
     public GroupDto createGroup(CreateGroupRequest request, User owner) {
+        // Check if group name already exists
+        if (groupRepository.existsByName(request.getName())) {
+            throw new DuplicateGroupNameException();
+        }
+        
         var group = groupMapper.toEntity(request);
         group.setOwner(owner);
         group.setInviteCode(generateInviteCode());
@@ -95,16 +120,19 @@ public class GroupService {
     }
 
     public void removeMember(UUID groupId, UUID userId, User currentUser) {
-        // Check if current user is admin of the group
+        // Check if current user is a member of the group
         var currentUserMember = groupMemberRepository.findByGroupIdAndUserId(groupId, currentUser.getId())
                 .orElseThrow(UserNotGroupMemberException::new);
         
-        if (currentUserMember.getRole() != MemberRole.ADMIN) {
-            throw new UnauthorizedMemberOperationException();
+        // If removing someone else, check if current user is admin
+        if (!currentUser.getId().equals(userId)) {
+            if (currentUserMember.getRole() != MemberRole.ADMIN) {
+                throw new UnauthorizedMemberOperationException();
+            }
         }
         
         // Prevent admin from removing themselves
-        if (currentUser.getId().equals(userId)) {
+        if (currentUser.getId().equals(userId) && currentUserMember.getRole() == MemberRole.ADMIN) {
             throw new AdminSelfRemovalException();
         }
         

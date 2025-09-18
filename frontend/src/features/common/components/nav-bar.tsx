@@ -40,6 +40,8 @@ export function NavBar() {
   };
 
   const handleLogout = () => {
+    // clear user state immediately
+    setUser(null);
     logout();
   };
 
@@ -48,7 +50,7 @@ export function NavBar() {
       {/* logo */}
       <button
         onClick={handleLogoClick}
-        className="text-2xl font-bold hover:opacity-80 transition-opacity"
+        className="text-3xl font-bold hover:opacity-80 transition-opacity"
         style={{ fontFamily: 'bitaria, sans-serif' }}
       >
         pubcrawl
