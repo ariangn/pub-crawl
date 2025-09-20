@@ -192,4 +192,32 @@ public class GroupService {
         return String.format("#%02X%02X%02X", 
             Math.round(r), Math.round(g), Math.round(b));
     }
+
+    public Iterable<GroupWithMembershipDto> getUserGroupsWithMembership(UUID userId, String sortBy) {
+        final String finalSortBy = Set.of("name", "createdAt").contains(sortBy) ? sortBy : "name";
+
+        var members = groupMemberRepository.findByUserId(userId);
+        return members.stream()
+                .map(member -> {
+                    var group = member.getGroup();
+                    return new GroupWithMembershipDto(
+                        group.getId(),
+                        group.getName(),
+                        group.getPfpUrl(),
+                        group.getOwner().getId(),
+                        group.getCreatedAt(),
+                        group.getInviteCode(),
+                        group.getDescription(),
+                        member.getRole(),
+                        member.getJoinedAt()
+                    );
+                })
+                .sorted((g1, g2) -> {
+                    if (finalSortBy.equals("createdAt")) {
+                        return g2.getCreatedAt().compareTo(g1.getCreatedAt());
+                    }
+                    return g1.getName().compareTo(g2.getName());
+                })
+                .toList();
+    }
 }

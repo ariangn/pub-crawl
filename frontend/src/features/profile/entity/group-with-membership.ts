@@ -1,4 +1,4 @@
-export interface Group {
+export interface GroupWithMembership {
   id: string;
   name: string;
   pfpUrl?: string;
@@ -6,4 +6,6 @@ export interface Group {
   createdAt: string;
   inviteCode: string;
   description?: string;
+  userRole: 'ADMIN' | 'MEMBER';
+  joinedAt: string;
 }

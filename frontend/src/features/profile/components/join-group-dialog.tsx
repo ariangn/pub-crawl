@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Link } from "react-router-dom";
 import type { JoinGroupRequest } from "../entity";
 
 interface JoinGroupDialogProps {
@@ -24,14 +25,13 @@ export function JoinGroupDialog({ onJoinGroup, isLoading = false, error, onSucce
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState<JoinGroupRequest>({
     inviteCode: "",
-    highlightColor: "",
   });
 
   // close dialog on success 
   useEffect(() => {
     if (!isLoading && !error && onSuccess) {
       onSuccess();
-      setFormData({ inviteCode: "", highlightColor: "" });
+      setFormData({ inviteCode: "" });
       setOpen(false);
     }
   }, [isLoading, error, onSuccess]);
@@ -41,9 +41,8 @@ export function JoinGroupDialog({ onJoinGroup, isLoading = false, error, onSucce
     if (formData.inviteCode.trim()) {
       onJoinGroup({
         inviteCode: formData.inviteCode.trim(),
-        highlightColor: formData.highlightColor?.trim() || undefined,
       });
-      setFormData({ inviteCode: "", highlightColor: "" });
+      setFormData({ inviteCode: "" });
       setOpen(false);
     }
   };
@@ -52,7 +51,7 @@ export function JoinGroupDialog({ onJoinGroup, isLoading = false, error, onSucce
     if (!isLoading) {
       setOpen(newOpen);
       if (!newOpen) {
-        setFormData({ inviteCode: "", highlightColor: "" });
+        setFormData({ inviteCode: "" });
       }
     }
   };
@@ -60,16 +59,25 @@ export function JoinGroupDialog({ onJoinGroup, isLoading = false, error, onSucce
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">Join Group</Button>
+        <Button>Join Group</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Join a group</DialogTitle>
             <DialogDescription>
-              Enter the invite code to join a reading group.
+              Enter the invite code to join a crawl group.
             </DialogDescription>
           </DialogHeader>
+          
+          <div>
+            <p className="text-sm text-muted-foreground">
+                Or, browse all groups
+                <Button asChild variant="ghost" className="p-1 h-auto font-normal underline">
+                <Link to="/browse">here</Link>
+                </Button>
+            </p>
+          </div>
           
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -84,20 +92,6 @@ export function JoinGroupDialog({ onJoinGroup, isLoading = false, error, onSucce
               />
             </div>
             
-            <div className="grid gap-2">
-              <Label htmlFor="highlightColor">Highlight Color (Optional)</Label>
-              <Input
-                id="highlightColor"
-                value={formData.highlightColor}
-                onChange={(e) => setFormData(prev => ({ ...prev, highlightColor: e.target.value }))}
-                placeholder="#E7BBE3"
-                type="color"
-                disabled={isLoading}
-              />
-              <p className="text-xs text-muted-foreground">
-                Choose a color for your highlights in this group
-              </p>
-            </div>
           </div>
           
           {error && (

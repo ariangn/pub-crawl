@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @Getter
-public class GroupDto {
+public class GroupWithMembershipDto {
     private UUID id;
     private String name;
     private String pfpUrl;
@@ -16,4 +16,6 @@ public class GroupDto {
     private LocalDateTime createdAt;
     private String inviteCode;
     private String description;
+    private MemberRole userRole;
+    private LocalDateTime joinedAt;
 }

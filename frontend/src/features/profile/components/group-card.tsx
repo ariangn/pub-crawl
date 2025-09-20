@@ -1,9 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
-import type { Group } from "../entity";
+import { Badge } from "@/components/ui/badge";
+import type { GroupWithMembership } from "../entity/group-with-membership";
 import { LeaveGroupDialog } from "./leave-group-dialog";
 
 interface GroupCardProps {
-  group: Group;
+  group: GroupWithMembership;
   onLeave: () => void;
   isLeaving?: boolean;
 }
@@ -29,19 +30,34 @@ export function GroupCard({ group, onLeave, isLeaving = false }: GroupCardProps)
             
             {/* details */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg truncate">{group.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-lg truncate">{group.name}</h3>
+                <Badge variant={group.userRole === 'ADMIN' ? 'default' : 'secondary'}>
+                  {group.userRole === 'ADMIN' ? 'Admin' : 'Member'}
+                </Badge>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Created {new Date(group.createdAt).toLocaleDateString()}
+                {group.userRole === 'ADMIN' 
+                  ? `Created ${new Date(group.createdAt).toLocaleDateString()}`
+                  : `Joined ${new Date(group.joinedAt).toLocaleDateString()}`
+                }
               </p>
+              {group.description && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                  {group.description}
+                </p>
+              )}
             </div>
           </div>
           
           {/* leave button */}
-          <LeaveGroupDialog
-            groupName={group.name}
-            onConfirmLeave={onLeave}
-            isLoading={isLeaving}
-          />
+          {group.userRole !== 'ADMIN' && (
+            <LeaveGroupDialog
+              groupName={group.name}
+              onConfirmLeave={onLeave}
+              isLoading={isLeaving}
+            />
+          )}
         </div>
       </CardContent>
     </Card>

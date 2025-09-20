@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { CreateGroupRequest } from "../entity";
 
 interface CreateGroupDialogProps {
@@ -25,13 +26,14 @@ export function CreateGroupDialog({ onCreateGroup, isLoading = false, error, onS
   const [formData, setFormData] = useState<CreateGroupRequest>({
     name: "",
     pfpUrl: "",
+    description: "",
   });
 
   // close dialog on success 
   useEffect(() => {
     if (!isLoading && !error && onSuccess) {
       onSuccess();
-      setFormData({ name: "", pfpUrl: "" });
+      setFormData({ name: "", pfpUrl: "", description: "" });
       setOpen(false);
     }
   }, [isLoading, error, onSuccess]);
@@ -42,6 +44,7 @@ export function CreateGroupDialog({ onCreateGroup, isLoading = false, error, onS
       onCreateGroup({
         name: formData.name.trim(),
         pfpUrl: formData.pfpUrl?.trim() || undefined,
+        description: formData.description?.trim() || undefined,
       });
     }
   };
@@ -50,7 +53,7 @@ export function CreateGroupDialog({ onCreateGroup, isLoading = false, error, onS
     if (!isLoading) {
       setOpen(newOpen);
       if (!newOpen) {
-        setFormData({ name: "", pfpUrl: "" });
+        setFormData({ name: "", pfpUrl: "", description: "" });
       }
     }
   };
@@ -92,6 +95,22 @@ export function CreateGroupDialog({ onCreateGroup, isLoading = false, error, onS
                 type="url"
                 disabled={isLoading}
               />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description (Optional)</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe your group..."
+                maxLength={500}
+                disabled={isLoading}
+                className="min-h-[80px]"
+              />
+              <p className="text-xs text-muted-foreground">
+                {formData.description?.length || 0}/500 characters
+              </p>
             </div>
           </div>
           

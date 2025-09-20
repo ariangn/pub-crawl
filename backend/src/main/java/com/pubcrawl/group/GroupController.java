@@ -28,14 +28,14 @@ public class GroupController {
     }
 
     @GetMapping("/my-groups")
-    public Iterable<GroupDto> getMyGroups(
+    public Iterable<GroupWithMembershipDto> getMyGroups(
         @RequestParam(required = false, defaultValue = "", name = "sort") String sortBy
     ) {
         var currentUser = authService.getCurrentUser();
         if (currentUser == null) {
             return List.of();
         }
-        return groupService.getUserGroups(currentUser.getId(), sortBy);
+        return groupService.getUserGroupsWithMembership(currentUser.getId(), sortBy);
     }
 
     @PostMapping

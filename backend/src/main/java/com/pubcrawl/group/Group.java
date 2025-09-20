@@ -38,6 +38,9 @@ public class Group {
     @Column(name = "invite_code", unique = true)
     private String inviteCode;
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "(" +
@@ -46,6 +49,7 @@ public class Group {
                 "pfpUrl = " + pfpUrl + ", " +
                 "owner = " + (owner != null ? owner.getId() : null) + ", " +
                 "createdAt = " + createdAt + ", " +
-                "inviteCode = " + inviteCode + ")";
+                "inviteCode = " + inviteCode + ", " +
+                "description = " + description + ")";
     }
 }

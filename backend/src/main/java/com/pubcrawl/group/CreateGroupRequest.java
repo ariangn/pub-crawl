@@ -13,4 +13,7 @@ public class CreateGroupRequest {
     private String name;
 
     private String pfpUrl;
+
+    @Size(max = 500, message = "Description must be at most 500 characters")
+    private String description;
 }

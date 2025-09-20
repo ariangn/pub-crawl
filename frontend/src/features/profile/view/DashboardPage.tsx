@@ -11,10 +11,10 @@ import {
   joinGroup
 } from "../repository/profile-repo";
 import type { 
-  Group, 
   CreateGroupRequest,
   JoinGroupRequest
 } from "../entity";
+import type { GroupWithMembership } from "../entity/group-with-membership";
 import { 
   showCreateGroupSuccessToast
 } from "../components/create-group-toast";
@@ -27,7 +27,7 @@ import {
 } from "../components/join-group-toast";
 
 export default function DashboardPage() {
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<GroupWithMembership[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [isJoiningGroup, setIsJoiningGroup] = useState(false);
@@ -56,7 +56,7 @@ export default function DashboardPage() {
       setIsCreatingGroup(true);
       setCreateGroupError(""); 
       const newGroup = await createGroup(request);
-      setGroups(prev => [...prev, newGroup]);
+      await loadGroups();
       showCreateGroupSuccessToast(newGroup.name);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to create group";
@@ -87,10 +87,10 @@ export default function DashboardPage() {
     try {
       setIsJoiningGroup(true);
       setJoinGroupError("");
-      await joinGroup(request);
+      const joinedGroup = await joinGroup(request);
       // reload to update w new group
       await loadGroups();
-      showJoinGroupSuccessToast("Group");
+      showJoinGroupSuccessToast(joinedGroup.name);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to join group";
       setJoinGroupError(errorMessage);
